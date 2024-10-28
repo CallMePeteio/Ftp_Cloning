@@ -1,0 +1,10 @@
+
+
+{
+    "ftp_server": "10.0.0.4",
+    "username": "ftp_user",
+    "password": "Password!",
+    "backup_path": "C:/Users/Petter/Desktop/code/python/FTP_NAS/backup",
+    "backup_folder_name": "BACKUP_",
+    "remote_path": "/"
+}
