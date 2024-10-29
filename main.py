@@ -9,20 +9,27 @@ from ftplib import FTP
 import subprocess
 import datetime
 import json
+import time
+import sys
 import os
 
-JSON_PATH = "./config.json"
 
+if getattr(sys, 'frozen', False):     # If the script is running as an executable
+    currentPath = os.path.dirname(sys.executable)
+else:
+    currentPath = os.path.dirname(os.path.abspath(__file__))     # If the script is running as a .py file
+JSON_PATH = os.path.join(currentPath, "config.json")
 
 
 def transferFile(localFileToUpload, remoteFilePath, ftp):
-
-    if os.path.exists(localFileToUpload):
-        #fileName = os.path.basename(localFileToUpload)
-        with open(localFileToUpload, "rb") as file:
-            ftp.storbinary(f"STOR {remoteFilePath}", file)
-    else:
-        print(f"Could not upload file: {localFileToUpload}. \n DOES NOT EXIST")
+    try:
+        if os.path.exists(localFileToUpload):
+            with open(localFileToUpload, "rb") as file:
+                ftp.storbinary(f"STOR {remoteFilePath}", file)
+        else:
+            print(f"Could not upload file: {localFileToUpload}. \n DOES NOT EXIST")
+    except EOFError:
+        print(f"There wass an error uploading file: {localFileToUpload}")
 
    
 
@@ -95,6 +102,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+    time.sleep(10)
 
 #transferFile()
 
