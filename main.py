@@ -2,9 +2,8 @@
 
 
 
-
+from ftplib import FTP, error_perm, all_errors
 from pathlib import Path
-from ftplib import FTP
 
 import subprocess
 import datetime
@@ -19,6 +18,7 @@ if getattr(sys, 'frozen', False):     # If the script is running as an executabl
 else:
     currentPath = os.path.dirname(os.path.abspath(__file__))     # If the script is running as a .py file
 JSON_PATH = os.path.join(currentPath, "config.json")
+TIMEOUT = 4
 
 
 def transferFile(localFileToUpload, remoteFilePath, ftp):
@@ -35,17 +35,30 @@ def transferFile(localFileToUpload, remoteFilePath, ftp):
 
 def main():
     # READS CONFIG DATA FROM JSON FILE
-    if os.path.exists(JSON_PATH) == True:
-        with open(JSON_PATH) as file:
-            config = json.load(file)
-    else:
-        print(f"Script didnt find config file, make sure config.json is in same dir. PATH={JSON_PATH}")
-        return
+    try:
+        if os.path.exists(JSON_PATH) == True:
+            with open(JSON_PATH) as file:
+                config = json.load(file)
+        else:
+            print(f"Script didnt find config file, make sure config.json is in same dir. PATH={JSON_PATH}")
+            return "error"
+    except json.JSONDecodeError as error:
+        print(f"There was an error reading JSON data, wrong fotmatting?\n{error}")
+        return "error"
 
     # CONNECTS TO FTP SEVRER
-    ftp = FTP(config["ftp_server"])
-    ftp.login(config["username"], config["password"])
-    ftp.cwd(config["remote_path"])
+    try:
+        ftp = FTP(config["ftp_server"], timeout=TIMEOUT)
+        ftp.login(config["username"], config["password"])
+        ftp.cwd(config["remote_path"])
+        print("Sucsessfully connected to FTP server")
+    except error_perm as e:
+        print(f"Permission error, connecting to FTP server: {e}")
+        return "error"
+    except all_errors as e:
+        print(f"There was a FTP error: \n{e}")
+        return "error"
+
 
     # GENERATES THE PARENTFOLDER BACKUP NAME
     parentFolderName = config["backup_folder_name"] + str(datetime.datetime.now().strftime("%d-%m-%Y_%H_%M_%S")) # PLACES THE BACUP INTO A PARENT FOLDER
@@ -94,15 +107,14 @@ def main():
             currentStructurePath = currentStructurePath.rsplit("/", 1)[0] # GOES TO PARENT FOLDER
             
 
-        
-
-
     ftp.quit()
 
 
 if __name__ == "__main__":
-    main()
-    time.sleep(10)
+    error = main()
+    if error == "error":
+        time.sleep(60)
+
 
 #transferFile()
 
